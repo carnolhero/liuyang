@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+
+	<!-- 指定对象工厂为: spring. -->
+	<constant name="struts.objectFactory" value="spring"></constant>
+
+	<package name="p1" namespace="/" extends="json-default">
+
+		<!-- 希望: struts 请求spring容器中的action实例. 而不是自身实例化. 需要: 指定spring容器中的action对象名. -->
+		<action name="my1_*" class="myaction" method="{1}">
+			
+			<result name="login" type="redirect">/login.jsp</result>
+			<result name="success" type="dispatcher">/user/index.jsp</result>
+			<result name="add" type="dispatcher">/user/addUser.jsp</result>
+			<result name="userInfo" type="dispatcher">/user/userInfo.jsp</result>
+			<result name="update" type="dispatcher">/user/updateUser.jsp</result>
+			<result name="updatePwd" type="dispatcher">/user/updatePwd.jsp</result>
+			
+			<result name="responseJson" type="json" >
+	 			<param name="root">data</param>
+	 		</result>
+	 		
+	 		<result name="responseJson2" type="json" >
+	 			<param name="root">m1</param>
+	 		</result>
+	 		
+	 		<result name="addUser" type="json" >
+	 			<param name="root">data2</param>
+	 		</result>
+	 		
+	 		<result name="delUser" type="json" >
+	 			<param name="root">data2</param>
+	 		</result>
+	 		
+	 		<result name="updateUser" type="json" >
+	 			<param name="root">data2</param>
+	 		</result>
+	 		
+	 		<result name="updatePassword" type="json" >
+	 			<param name="root">data2</param>
+	 		</result>
+	 		
+		</action>
+
+	</package>
+
+</struts>

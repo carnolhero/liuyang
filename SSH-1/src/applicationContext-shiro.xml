@@ -1,0 +1,70 @@
+<?xml version ="1.0" encoding ="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<!-- spring管理shiro组件: -->
+	<!-- 1.DefaultWebSecurityManager : shiro管理器. 负责加载和协调其他组件. 注入: realm , 缓存管理器. -->
+	<bean name="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<!--单个realm使用realm,如果有多个realm，使用realms属性代替 -->
+		<property name="realm" ref="userRealm" />
+	</bean>
+	
+	<!-- 2.realm组件: 关于授权,认证.  -->
+	<bean name="userRealm" class="com.hfxt.security.MyRealm"></bean>
+	
+	<!-- 扫描: IOC和DI。 -->
+	<context:component-scan base-package="com.hfxt"></context:component-scan>
+	
+	<!-- 3.提供shiroFilter过滤器工厂:  将产生过滤器.需要在web.xml中指定过滤器实现拦截过滤.
+				提供配置:  认证规则.
+				提供配置:  权限访问规则.
+	-->
+	<bean name="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		
+		<property name="securityManager" ref="securityManager" />
+		
+		<!--
+			认证失败,权限验证失败的提示页面:
+		-->
+		<property name="loginUrl" value="/login.jsp"/>
+		<property name="successUrl" value="/user/index.jsp"/>
+		<property name="unauthorizedUrl" value="/unauth.jsp"/>
+		
+		<property name="filterChainDefinitions">
+			<value>
+				<!-- 
+					等待配置过滤器进行访问拦截.
+					anon表示可以不用等了直接访问,
+					authc表示必须登录. 
+					/**=anon 
+					注: 当过滤器过滤请求时, 将所有的项目根目录下的uri地址,用作匹配以下规则:
+					
+					//指定权限,角色控制规则: 
+					// 将验证规则中的权限和授权方法中的权限.
+					//当访问目标资源时, 是转发访问,支持.过滤器跳过过滤.
+				-->
+				/user/pay.jsp=authc,roleFilter["admin","user"]
+				/user/**=authc
+				/**=anon
+			</value>
+		</property>
+	</bean>
+	
+	<!-- 4.提供shiro内部的bean对象的生命周期管理. -->
+	<bean name="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"></bean>
+	
+	<!-- 5.需要提供权限拦截过滤器: -->
+	<bean id="roleFilter" class="com.hfxt.security.RoleFilter"></bean>	
+	
+	</beans>

@@ -1,0 +1,97 @@
+<?xml version ="1.0" encoding ="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<!-- 1.spring容器 : 维护hibernate的sessionFactory. 1.1:单独维护数据源连接. 1.2:维护hibernate的常量配置. 
+		1.3:配置hibernate的映射文件. -->
+
+	<!-- 加载外部的常量连接配置: dbinfo.properties -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:dbinfo.properties"></property>
+	</bean>
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.driverClassName}"></property>
+		<property name="url" value="${jdbc.url}"></property>
+		<property name="username" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean>
+
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<!-- 连接池: -->
+		<property name="dataSource" ref="dataSource"></property>
+
+		<!-- 常量配置: -->
+		<property name="hibernateProperties">
+			<props>
+				<!-- 数据库方言 -->
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<!-- 控制台是否输出sql语句 -->
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate3.SpringSessionContext</prop>
+			</props>
+		</property>
+
+		<!-- 提供映射文件: -->
+		<property name="mappingLocations">
+			<list>
+				<value>classpath:com/hfxt/bean/User.hbm.xml</value>
+				<value>classpath:com/hfxt/bean/Permission.hbm.xml</value>
+				<value>classpath:com/hfxt/bean/Role.hbm.xml</value>
+			</list>
+		</property>
+
+	</bean>
+
+	<!-- 2.通过DI将sessionFactory提供给dao层: 实现数据库的增删改查. -->
+	<bean id="userDaoImpl" class="com.hfxt.dao.impl.UserDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!-- 3.维护service层,并注入dao层; -->
+	<bean id="userService" class="com.hfxt.service.impl.UserServiceImpl">
+		<property name="userDao" ref="userDaoImpl"></property>
+	</bean>
+
+	<!-- 4.使用AOP技术实现: service层的事务控制.需要注入: 会话连接到事务中. 4.1:单独维护一个事务管理器实现类. 针对会话工厂进行事务管理. 
+		4.2:声明事务通知定义. 4.3:定义切入点,进行通知的织入. -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 针对哪些方法使用该通知: -->
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="del*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="edit*" propagation="REQUIRED" />
+			<tx:method name="*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 织入: -->
+	<aop:config>
+		<aop:pointcut expression="execution(* com.hfxt.service.*.*(..))" id="pointcut_service" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut_service" />
+	</aop:config>
+
+	<!-- Spring与struts整合 : 需要管理action对象. 区分: myaction在使用时,满足多例使用. 这样action实例之间的值栈不会混乱. -->
+	<bean id="myaction" class="com.hfxt.controller.MyAction" scope="prototype">
+		<property name="userService" ref="userService"></property>
+	</bean>
+
+</beans>

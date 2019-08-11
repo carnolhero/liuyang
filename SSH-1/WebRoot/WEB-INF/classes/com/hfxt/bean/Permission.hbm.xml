@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC 
+	"-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+	"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+	
+<hibernate-mapping>
+	
+	<class name="com.hfxt.bean.Permission" table="tb_permission">
+		
+		<id name="mid" column="id">
+			<generator class="native"></generator>
+		</id>	
+		
+		<property name="menuName" column="permname" />
+		<property name="menuPath" column="address" />
+		<property name="pareMenuId" column="pareid" />
+		
+	</class>
+	
+</hibernate-mapping>
